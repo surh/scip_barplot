@@ -1,0 +1,122 @@
+---
+title: "Getting data for SCIP"
+author: "Sur Herrera Paredes"
+output:
+  html_document:
+    toc: TRUE
+    toc_float: TRUE
+---
+
+```{r}
+library(tidyverse)
+```
+
+# Rhizosphere data
+
+```{r rhizo otutab}
+data(Rhizo, package = "AMOR")
+Rhizo <- Rhizo %>%
+  mutate(otu_id = row.names(Rhizo)) %>%
+  select(otu_id, everything()) %>%
+  as_tibble()
+print(Rhizo)
+write_tsv(Rhizo, "rhizo/otu_table.tsv")
+```
+
+```{r rhizo sample meta}
+data(Rhizo.map, package = "AMOR")
+Rhizo.map <- Rhizo.map %>%
+  mutate(sample_id = row.names(Rhizo.map)) %>%
+  select(sample_id, everything(), -plate) %>%
+  as_tibble() %>%
+  mutate(accession = as.character(accession)) %>%
+  mutate(accession = replace(accession, accession == "Col", "Col-0")) %>%
+  mutate(accession = replace(accession, accession == "Ler", "Ler-0"))
+print(Rhizo.map)
+write_tsv(Rhizo.map, "rhizo/sample_metadata.tsv")
+```
+
+```{r rhizo taxonomy}
+
+data(Rhizo.tax, package = "AMOR")
+Rhizo.tax <- Rhizo.tax %>%
+  mutate(otu_id = row.names(Rhizo.tax)) %>%
+  select(otu_id, Taxonomy) %>%
+  as_tibble() %>%
+  mutate(Phylum = AMOR::get_tax_level(Rhizo.tax, level = 4)) %>%
+  mutate(Phylum = str_remove(Phylum, "^Root;Root;k__Bacteria;p__")) %>%
+  select(otu_id, Phylum)
+print(Rhizo.tax)
+write_tsv(Rhizo.tax, "rhizo/otu_taxonomy.tsv")
+```
+
+# Human gut data (HMP V13)
+
+```{r sample selection}
+meta <- read_tsv("hmp_v13/v13_map_uniquebyPSN.txt.gz",
+                 col_types = cols(`#SampleID` = col_character(),
+                                  sex = col_character(),
+                                  HMPbodysubsite = col_character()))
+meta <- meta %>%
+  select(sample_id = `#SampleID`, sex, body_site = HMPbodysubsite)
+table(meta$body_site)
+```
+
+```{r}
+meta <- meta %>%
+  filter(body_site %in% c("Saliva", "Stool"))
+print(meta)
+```
+
+```{r full oty}
+Dat <- AMOR::read.am("hmp_v13/otu_table_psn_v13.txt.gz", format = "qiime", taxonomy = "Consensus.Lineage", simplify = FALSE)
+Dat$Tab[1:10,1:10]
+```
+
+```{r}
+Dat$Tab <- Dat$Tab[ , colnames(Dat$Tab) %in% paste0("X", meta$sample_id)]
+Dat <- AMOR::clean(Dat)
+```
+
+```{r}
+Dat$Tab <- Dat$Tab %>%
+  as.data.frame() %>%
+  mutate(otu_id = row.names(Dat$Tab)) %>%
+  select(otu_id, everything()) %>%
+  as_tibble()
+print(Dat$Tab)
+```
+
+```{r}
+colnames(Dat$Tab)
+colnames(Dat$Tab) <- str_replace(colnames(Dat$Tab), "^X", "")
+Dat$Tab
+```
+
+```{r}
+write_tsv(Dat$Tab, "hmp_v13/otu_table.tsv")
+```
+
+```{r}
+meta <- meta %>%
+  filter(sample_id %in% colnames(Dat$Tab))
+print(meta)
+write_tsv(meta, "hmp_v13/sample_metadata.tsv")
+```
+
+```{r}
+Dat$Tax <- Dat$Tax %>%
+  as_tibble() %>%
+  rename(otu_id = ID) %>%
+  mutate(Phylum = AMOR::get_tax_level(Dat$Tax, level = 2, sepchar = ";")) %>%
+  select(otu_id, Phylum) %>%
+  mutate(Phylum = str_remove(Phylum, "^Root;p__"))
+print(Dat$Tax)
+write_tsv(meta, "hmp_v13/otu_taxonomy.tsv")
+```
+
+# Session Info
+
+```{r}
+sessionInfo()
+```

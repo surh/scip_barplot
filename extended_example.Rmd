@@ -1,0 +1,336 @@
+---
+title: "Plotting the distribution of taxa"
+author: "Sur Herrera Paredes"
+date: "`r Sys.Date()`"
+output:
+  github_document:
+    toc: TRUE
+---
+
+```{r}
+library(tidyverse)
+```
+ 
+# Read data
+
+```{r}
+Tab <- read_tsv("data/rhizo/otu_table.tsv")
+Tab
+```
+
+
+```{r}
+Tab <- read_tsv("data/rhizo/otu_table.tsv",
+                col_types = cols(otu_id = col_character(),
+                                 .default = col_number()))
+Tab
+```
+
+
+# Basic barplot 
+
+We need to think back to the original figure and reformat our data to have one
+column for the x-axis and another for the y-axis
+
+```{r}
+Tab %>%
+  pivot_longer(-otu_id, names_to = "sample_id", values_to = "count")
+```
+
+Lets create a smaller subset of the data to make some basic plots
+
+```{r}
+dat <- Tab %>%
+  pivot_longer(-otu_id, names_to = "sample_id", values_to = "count") %>%
+  filter(otu_id %in% c("OTU_14834", "OTU_18567", "OTU_14402", "OTU_14822"))
+print(dat)
+```
+
+Now we create a basic barplot that shows relative abundances of the 4
+selected OTUs
+```{r}
+dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill")
+```
+
+Now we re-make the plot with some beautification
+
+```{r}
+dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90))
+```
+
+# Adding sample metadata
+
+Read sample metadata
+
+```{r}
+Meta <- read_tsv("data/rhizo/sample_metadata.tsv",
+                 col_types = cols(.default = col_character()))
+Meta
+```
+
+We **join** our long format dataset with the sample metadata table
+
+```{r}
+print(dat)
+dat <- dat %>%
+  left_join(Meta, by = "sample_id")
+dat
+```
+We add facts with `facet_grid`
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill") +
+  facet_grid(~ fraction) +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(color = "black"))
+p1
+```
+We set `scales="free_x"` to plot a different set of samples on each
+facet.
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill") +
+  facet_grid(~ fraction, scales = "free_x") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(color = "black"))
+p1
+```
+
+We repeat the plot with some beautification
+
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill", width = 1) +
+  facet_grid(~ fraction, scales = "free_x") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(color = "black"),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_blank())
+p1
+```
+We can add an extra variable to the facet
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill", width = 1) +
+  facet_grid(~ fraction + soil, scales = "free_x") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(color = "black"),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_blank())
+p1
+```
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = otu_id), stat = "identity", position = "fill", width = 1) +
+  facet_grid(~ fraction + soil, scales = "free_x", space = "free_x") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(color = "black"),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_blank())
+p1
+```
+
+## Excercise 1
+
+Re-make the plot above but using accession instead of soil type in the facets
+
+## Excercise 2
+
+Re-make the plot above but show all three variables (fraction, accession and
+soil) in the facets. What happens if you change the order of the terms
+in the facet formulas? is any of the orders better?
+
+# Adding OTU taxonomy
+
+```{r}
+Tax <- read_tsv("data/rhizo/otu_taxonomy.tsv",
+                col_types = cols(otu_id = col_character(),
+                                 Phylum = col_character()))
+Tax
+```
+Let's include all OTUs in our data table now
+
+```{r}
+dat <-Tab %>%
+  pivot_longer(-otu_id, names_to = "sample_id",
+               values_to = "count")
+print(dat)
+```
+
+As we did before with sample metadata, we use `left_join` to add OTU
+taxonomic information to our data table
+
+```{r}
+dat <- dat %>%
+  left_join(Tax, by = "otu_id")
+print(dat)
+```
+
+Let's make our basic plot, but using `Phylum` instead of `otu_id`
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1) +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(face = "bold")) 
+p1
+```
+
+Can we find better colors
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1) +
+  scale_fill_brewer(palette = "Paired") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(face = "bold")) 
+p1
+```
+I want phyla to be ordered by abundance and "unclassified" to be
+at the end
+
+Code to get order not shown but results are in `mean_freqs`
+
+```{r, echo=FALSE}
+mean_freqs <- dat %>%
+  group_by(sample_id, Phylum) %>%
+  summarise(phyl_count = sum(count),
+            .groups = 'drop') %>%
+  group_by(sample_id) %>%
+  summarise(phyl_freq = phyl_count / sum(phyl_count),
+            Phylum = Phylum,
+            .groups = 'drop') %>%
+  group_by(Phylum) %>%
+  summarise(mean = mean(phyl_freq),
+            .groups = 'drop') %>%
+  arrange(desc(mean))
+print(mean_freqs)
+```
+Create a vector with the desired order of phyla and use it to convert
+phylum column to a factor.
+
+```{r}
+phyla_order <- c("Proteobacteria",                                                                                                                      
+                 "Actinobacteria",                                                                                                        
+                 "Bacteroidetes",                                                                                        
+                 "Acidobacteria",                                                                       
+                 "Firmicutes",                                                         
+                 "Cyanobacteria",                                     
+                 "Verrucomicrobia",                 
+                 "Gemmatimonadetes",                                             
+                 "Armatimonadetes",
+                 "Chloroflexi",
+                 "unclassified")
+
+dat <- dat %>%
+  mutate(Phylum = factor(Phylum, levels = phyla_order))
+dat
+
+```
+
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1) +
+  scale_fill_brewer(palette = "Paired") +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90),
+        axis.text.y = element_text(face = "bold")) 
+p1
+```
+## Excercise
+
+Use `scale_color_manual` to manually select a good set of colors for this plot
+
+# Combining sample metadata and OTU taxonomy
+
+We can use `lef_join` twice in a row to get a combinde data table with all
+the information
+
+```{r}
+dat <- Tab %>%
+  pivot_longer(-otu_id, names_to = "sample_id", values_to = "count") %>%
+  left_join(Meta, by = "sample_id") %>%
+  left_join(Tax, by = "otu_id")
+print(dat)
+```
+
+To get the same order as above we convert the Phylum column to a factor
+
+```{r}
+dat <- dat %>%
+  mutate(Phylum = factor(Phylum, levels = phyla_order))
+dat
+```
+
+
+Now we can combine facets and phylum color and ordering in just one plot
+
+```{r}
+p1 <- dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  facet_grid(~ fraction + soil, scales = "free_x", space = "free_x") +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1) +
+  scale_y_continuous(name = "Relative abundance", labels = scales::percent) +
+  scale_fill_brewer(palette = "Paired") +
+  theme(axis.text.x = element_text(angle = 90, size = 6),
+        axis.text.y = element_text(color = "black"),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_blank())
+p1
+```
+
+
+We save the plot to a file
+
+```{r}
+ggsave("rhizo_phylo_distribution.png", p1, width = 8, height = 4)
+```
+
+
+
+# Extra excercises
+
+Look at the files at [data/hmp_v13](data/hmp_v13) which contain much bigger
+data tables generated from the Human Microbiome Project (HMP).
+
+Can you make similar plots illustrating the bacterial taxonomic distributions
+of the Stool and Saliva? Are there any differences by sex?
+
+Can you order the samples by Proteobacteria relative abundance in the
+rhizosphere dataset? what about the Bacteroidetes abundance in the
+HMP dataset? (HINT: Use the same approach we used to sort taxonomic groups)
+
+
+# Session info
+
+```{r}
+sessionInfo()
+```
+
