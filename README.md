@@ -29,7 +29,7 @@ The RMarkdown code that generated that files is at
 
 ## More resources
 
-* For any questions just raise a GitHub issue in this repository
+* For any questions just [raise an issue](https://github.com/surh/scip_barplot/issues) in this repository
 
 * See the slides from the workshop video.
 
