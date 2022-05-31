@@ -1,0 +1,100 @@
+---
+title: "SCIP barplot"
+output: html_notebook
+---
+
+
+```{r}
+library(tidyverse)
+```
+
+```{r}
+Tab <- read_tsv("data/rhizo/otu_table.tsv",
+                col_types = cols(otu_id = col_character(),
+                                 .default = col_number()))
+Tab
+```
+
+
+
+```{r}
+dat <- Tab %>%
+  pivot_longer(-otu_id, names_to = "sample_id", values_to = "count")
+dat
+```
+
+
+```{r}
+Tax <- read_tsv("data/rhizo/otu_taxonomy.tsv",
+                col_types = cols(.default = "character"))
+Tax
+```
+
+```{r}
+dat <- dat %>%
+  left_join(Tax, by = "otu_id")
+dat
+```
+
+```{r}
+Meta <- read_tsv("data/rhizo/sample_metadata.tsv",
+                 col_types = cols(.default = col_character()))
+Meta
+```
+
+
+```{r}
+dat <- dat %>%
+  left_join(Meta, by = "sample_id")
+dat
+```
+
+```{r}
+dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  facet_grid(~ fraction + soil, scales = "free_x", space = "free_x") +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1)
+```
+
+```{r}
+dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  facet_grid(~ fraction + soil, scales = "free_x", space = "free_x") +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1) +
+  scale_fill_brewer(palette = "Paired")
+```
+
+
+```{r}
+phyla_order <- c("Proteobacteria",
+		 "Actinobacteria",
+		 "Bacteroidetes",
+		 "Acidobacteria",
+		 "Firmicutes",
+		 "Cyanobacteria",
+		 "Verrucomicrobia",
+		 "Gemmatimonadetes",
+		 "Armatimonadetes",
+		 "Chloroflexi",
+		 "unclassified")
+dat <- dat %>%
+  mutate(Phylum = factor(Phylum, levels = phyla_order))
+```
+
+
+
+
+```{r}
+dat %>%
+  ggplot(aes(x = sample_id, y = count)) +
+  facet_grid(~ fraction + soil, scales = "free_x", space = "free_x") +
+  geom_bar(aes(fill = Phylum), stat = "identity", position = "fill", width = 1) +
+  scale_fill_brewer(palette = "Paired") +
+  scale_y_continuous(name = "Relative abundance",
+                     labels = scales::percent) +
+  theme(axis.text.x = element_text(angle = 90, size = 6),
+        axis.text.y = element_text(color = "black"),
+        strip.text = element_text(face = "bold"),
+        strip.background = element_blank())
+```
+
