@@ -10,7 +10,7 @@ plants. The data is a small subset of the dataset that was published
 [here](https://www.nature.com/articles/nature11237).
 
 These materials were created for the 2022 SFSU
-[Science Coding Immersion Program (SPIC)](https://sfsuscip.wixsite.com/scip) &
+[Science Coding Immersion Program (SCIP)](https://sfsuscip.wixsite.com/scip) &
 [Promoting Inclusivity in Computing (PINC)](https://pinc.sfsu.edu/pinc/pinc/bdsp)
 summer pograms.
 
