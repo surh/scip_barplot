@@ -70,6 +70,8 @@ and Saliva, are there any differences by sex?
 
 * [Video](https://www.youtube.com/watch?v=siIoupAnILk) of the workshop.
 
+* [Code typed](video_code.Rmd) during the video.
+
 ## License & copyright
 
 (C) Copyright 2022 Sur Herrera Paredes
