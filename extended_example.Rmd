@@ -7,16 +7,82 @@ output:
     toc: TRUE
 ---
 
+# Introduction
+
+In this extended example I go through every step to produce a relative
+abundance barplot that represents bacterial communities living in
+individual hosts. 
+
+Bacterial communities are everywhere, and when we characterize them
+it is important to describe they overall taxonomic structure as that
+gives us clues as to what types of functions might be performed by the
+community. At the same time, it is important to show the variability
+of these communities and thus it is useful to plot them at the lowest
+aggregation level possible.
+
+In this example, I utilize data from a big experiment that
+was published [here](https://www.nature.com/articles/nature11237). In
+that experiment, we planted individual *Arabidopsis thaliana* plants in
+individual pots. The pots each had one of two types of natural soil,
+each from two different seasons. We planted eight different accessions in
+each of those soils, and plants were harvested at two developmental stages.
+Additionally we had unplanted soil only pots, these are the "soil" samples
+in the example. For each individual plant, we harvested two fractions
+(i.e. E & R), one which we called the Endophytic Compartment (E) and
+corresponds to the interior of the root after removing the outer cell wall,
+and another which we called Rhizosphere (R) which is the soil within 1mm of
+the plant root. So **E** samples contains bacteria inside the root, and **R**
+samples contain bacteria immediately surrounding the root.
+
+Plant-bacteria interactions in the root are incredibly important because
+the root is both the gut and the brain of the plant. Microbes there
+can benefit of the products of the plant photosynthesis as sources
+of nutrition, and can also provide chemistry that the plant couldn't perform
+by itself. However, the story is more complicated because microbial competition
+and the plant immune system also provide a fertile evolutionary environment 
+for antagonistic interactions.
+
+Ultimately understanding and being able to manipulate plant-bacteria
+interactions has a lot of implications as hunger is one of the most pressing
+problems of humanity with 800 million people living in hunger. Agriculture
+is our only sustainable tool against hunger, and even though it currently 
+employs a quarter of the World population it has not been enough to tackle
+this challenge. 
+
+# Getting ready
+
+First you need to get the data. If you haven't check the 
+[README](https://github.com/surh/scip_barplot/blob/master/README.md) file
+of the GitHub repository of the workshop. It is also recommended that
+you watch the YouTube [video](https://www.youtube.com/watch?v=siIoupAnILk)
+that runs through the example. Finally, you will need to install the
+`tidyverse` package.
+
+Once you have everything you need, start an R session and load the tidyverse
+package:
+
 ```{r}
 library(tidyverse)
 ```
  
 # Read data
 
+First read the OTU table. You may need to change the file path
+to wherever you downloaded the files in your machine.
+
 ```{r}
 Tab <- read_tsv("data/rhizo/otu_table.tsv")
 Tab
 ```
+
+The code above reads the file into a `tibble`, which is a type
+of `data.frame` that has some neat additional properties. You
+don't need to concern yourself too much with the differences. 
+
+The code above also produces a warning, indicating that `read_tsv`
+tried to guess the types of data in each column of the table. It
+guessed correctly but you should always specify the expected columns
+with the option `col_types` (use `?read_tsv` for additional details).
 
 
 ```{r}
@@ -26,16 +92,19 @@ Tab <- read_tsv("data/rhizo/otu_table.tsv",
 Tab
 ```
 
-
 # Basic barplot 
 
 We need to think back to the original figure and reformat our data to have one
-column for the x-axis and another for the y-axis
+column for the x-axis and another for the y-axis. This is a requirement for
+`ggplot2`. We can to that with `pivot_longer`, a function of the `tidyverse`.
 
 ```{r}
 Tab %>%
   pivot_longer(-otu_id, names_to = "sample_id", values_to = "count")
 ```
+
+In the code above the options `samples_to` and `names_to` indicate the
+names of the new columns in the new tibble.
 
 Lets create a smaller subset of the data to make some basic plots
 
@@ -109,7 +178,6 @@ p1
 ```
 
 We repeat the plot with some beautification
-
 
 ```{r}
 p1 <- dat %>%

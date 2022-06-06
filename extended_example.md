@@ -1,8 +1,10 @@
 Plotting the distribution of taxa
 ================
 Sur Herrera Paredes
-2022-05-24
+2022-06-06
 
+-   [Introduction](#introduction)
+-   [Getting ready](#getting-ready)
 -   [Read data](#read-data)
 -   [Basic barplot](#basic-barplot)
 -   [Adding sample metadata](#adding-sample-metadata)
@@ -13,6 +15,61 @@ Sur Herrera Paredes
     taxonomy](#combining-sample-metadata-and-otu-taxonomy)
 -   [Extra excercises](#extra-excercises)
 -   [Session info](#session-info)
+
+# Introduction
+
+In this extended example I go through every step to produce a relative
+abundance barplot that represents bacterial communities living in
+individual hosts.
+
+Bacterial communities are everywhere, and when we characterize them it
+is important to describe they overall taxonomic structure as that gives
+us clues as to what types of functions might be performed by the
+community. At the same time, it is important to show the variability of
+these communities and thus it is useful to plot them at the lowest
+aggregation level possible.
+
+In this example, I utilize data from a big experiment that was published
+[here](https://www.nature.com/articles/nature11237). In that experiment,
+we planted individual *Arabidopsis thaliana* plants in individual pots.
+The pots each had one of two types of natural soil, each from two
+different seasons. We planted eight different accessions in each of
+those soils, and plants were harvested at two developmental stages.
+Additionally we had unplanted soil only pots, these are the “soil”
+samples in the example. For each individual plant, we harvested two
+fractions (i.e. E & R), one which we called the Endophytic Compartment
+(E) and corresponds to the interior of the root after removing the outer
+cell wall, and another which we called Rhizosphere (R) which is the soil
+within 1mm of the plant root. So **E** samples contains bacteria inside
+the root, and **R** samples contain bacteria immediately surrounding the
+root.
+
+Plant-bacteria interactions in the root are incredibly important because
+the root is both the gut and the brain of the plant. Microbes there can
+benefit of the products of the plant photosynthesis as sources of
+nutrition, and can also provide chemistry that the plant couldn’t
+perform by itself. However, the story is more complicated because
+microbial competition and the plant immune system also provide a fertile
+evolutionary environment for antagonistic interactions.
+
+Ultimately understanding and being able to manipulate plant-bacteria
+interactions has a lot of implications as hunger is one of the most
+pressing problems of humanity with 800 million people living in hunger.
+Agriculture is our only sustainable tool against hunger, and even though
+it currently employs a quarter of the World population it has not been
+enough to tackle this challenge.
+
+# Getting ready
+
+First you need to get the data. If you haven’t check the
+[README](https://github.com/surh/scip_barplot/blob/master/README.md)
+file of the GitHub repository of the workshop. It is also recommended
+that you watch the YouTube
+[video](https://www.youtube.com/watch?v=siIoupAnILk) that runs through
+the example. Finally, you will need to install the `tidyverse` package.
+
+Once you have everything you need, start an R session and load the
+tidyverse package:
 
 ``` r
 library(tidyverse)
@@ -30,6 +87,9 @@ library(tidyverse)
     ## x dplyr::lag()    masks stats::lag()
 
 # Read data
+
+First read the OTU table. You may need to change the file path to
+wherever you downloaded the files in your machine.
 
 ``` r
 Tab <- read_tsv("data/rhizo/otu_table.tsv")
@@ -69,6 +129,15 @@ Tab
     ## #   D416 <dbl>, D417 <dbl>, D418 <dbl>, D419 <dbl>, D420 <dbl>, D421 <dbl>,
     ## #   D422 <dbl>, D423 <dbl>, D424 <dbl>, D425 <dbl>, D426 <dbl>, D427 <dbl>, …
 
+The code above reads the file into a `tibble`, which is a type of
+`data.frame` that has some neat additional properties. You don’t need to
+concern yourself too much with the differences.
+
+The code above also produces a warning, indicating that `read_tsv` tried
+to guess the types of data in each column of the table. It guessed
+correctly but you should always specify the expected columns with the
+option `col_types` (use `?read_tsv` for additional details).
+
 ``` r
 Tab <- read_tsv("data/rhizo/otu_table.tsv",
                 col_types = cols(otu_id = col_character(),
@@ -100,7 +169,9 @@ Tab
 # Basic barplot
 
 We need to think back to the original figure and reformat our data to
-have one column for the x-axis and another for the y-axis
+have one column for the x-axis and another for the y-axis. This is a
+requirement for `ggplot2`. We can to that with `pivot_longer`, a
+function of the `tidyverse`.
 
 ``` r
 Tab %>%
@@ -121,6 +192,9 @@ Tab %>%
     ##  9 OTU_14834 D195          5
     ## 10 OTU_14834 D196          1
     ## # … with 8,891 more rows
+
+In the code above the options `samples_to` and `names_to` indicate the
+names of the new columns in the new tibble.
 
 Lets create a smaller subset of the data to make some basic plots
 
@@ -492,7 +566,7 @@ p1
 ```
 
 ![](extended_example_files/figure-gfm/unnamed-chunk-22-1.png)<!-- -->
-\#\# Excercise
+\## Excercise
 
 Use `scale_color_manual` to manually select a good set of colors for
 this plot
@@ -574,7 +648,7 @@ ggsave("rhizo_phylo_distribution.png", p1, width = 8, height = 4)
 
 # Extra excercises
 
-Look at the files at [data/hmp\_v13](data/hmp_v13) which contain much
+Look at the files at [data/hmp_v13](data/hmp_v13) which contain much
 bigger data tables generated from the Human Microbiome Project (HMP).
 
 Can you make similar plots illustrating the bacterial taxonomic
